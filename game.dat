@@ -1,0 +1,15 @@
+int[][] board;
+int[][] solution;
+int cellSize = 60;
+boolean[][] fixedCells;
+boolean showSolution = false;
+int selectedRow = -1;
+int selectedCol = -1;
+
+void setup() {
+  size(540, 600);
+  board = new int[9][9];
+  solution = new int[9][9];
+  fixedCells = new boolean[9][9];
+  generateSudoku();
+}
