@@ -11,5 +11,20 @@ void setup() {
   board = new int[9][9];
   solution = new int[9][9];
   fixedCells = new boolean[9][9];
-  generateSudoku();
+}
+
+void draw() {
+  background(255);
+  drawGrid();
+}
+
+void drawGrid() {
+  stroke(0);
+  for (int i = 0; i <= 9; i++) {
+    if (i % 3 == 0) strokeWeight(3);
+    else strokeWeight(1);
+    
+    line(i * cellSize, 0, i * cellSize, height - 60);
+    line(0, i * cellSize, width, i * cellSize);
+  }
 }
