@@ -1,3 +1,4 @@
+// ตัวแปรสำหรับปุ่ม
 PButton startButton, loadButton, exitButton;
 
 void setup() {
@@ -15,6 +16,24 @@ void draw() {
   startButton.display();
   loadButton.display();
   exitButton.display();
+}
+
+void mousePressed() {
+  // ตรวจสอบว่าคลิกที่ปุ่ม Start หรือไม่
+  if (startButton.isClicked(mouseX, mouseY)) {
+    println("Start button clicked");
+  }
+  
+  // ตรวจสอบว่าคลิกที่ปุ่ม Load หรือไม่
+  if (loadButton.isClicked(mouseX, mouseY)) {
+    println("Load button clicked");
+  }
+  
+  // ตรวจสอบว่าคลิกที่ปุ่ม Exit หรือไม่ และปิดโปรแกรม
+  if (exitButton.isClicked(mouseX, mouseY)) {
+    println("Exit button clicked");
+    exit(); // ปิดโปรแกรม
+  }
 }
 
 // คลาสสำหรับปุ่ม
@@ -39,5 +58,10 @@ class PButton {
     fill(255); // กำหนดสีตัวหนังสือเป็นสีขาว
     textAlign(CENTER, CENTER);
     text(label, x + w / 2, y + h / 2);
+  }
+
+  // ตรวจสอบว่าพิกัดเมาส์ (mx, my) อยู่ภายในปุ่มหรือไม่
+  boolean isClicked(float mx, float my) {
+    return (mx > x && mx < x + w && my > y && my < y + h);
   }
 }
