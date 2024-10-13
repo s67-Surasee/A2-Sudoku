@@ -4,6 +4,10 @@ PButton startButton, loadButton, exitButton;
 // สถานะของหน้าจอปัจจุบัน
 String screen = "menu"; // เริ่มต้นที่หน้าจอเมนู
 
+// ตารางซูโดกุขนาด 9x9
+int[][] grid = new int[9][9]; // เก็บตัวเลขในแต่ละช่อง
+int selectedRow = -1, selectedCol = -1; // ตำแหน่งช่องที่ถูกเลือก
+
 void setup() {
   size(450, 450);  // ขนาดหน้าต่าง 450x450 พิกเซล
   background(255); // ตั้งค่าสีพื้นหลังเป็นสีขาว
@@ -29,6 +33,57 @@ void draw() {
   }
 }
 
+// ฟังก์ชันวาดตารางซูโดกุโดยใช้สี่เหลี่ยม
+void drawSudokuGrid() {
+  int gridSize = 9;      // ซูโดกุเป็นตารางขนาด 9x9
+  float cellSize = width / gridSize;  // ขนาดของช่องแต่ละช่อง
+
+  for (int i = 0; i < gridSize; i++) {
+    for (int j = 0; j < gridSize; j++) {
+      if (i == selectedRow && j == selectedCol) {
+        fill(255, 100, 100); // ช่องที่ถูกเลือกจะเป็นสีแดงอ่อน
+      } else {
+        fill(255); // ช่องปกติเป็นสีขาว
+      }
+
+      // วาดช่องสี่เหลี่ยมของตาราง
+      noStroke(); // ปิดเส้นขอบเพื่อให้วาดช่องสี่เหลี่ยมก่อน
+      rect(i * cellSize, j * cellSize, cellSize, cellSize);
+
+      // วาดเส้นขอบของตารางแบบบาง
+      stroke(0); // เส้นขอบสีดำ
+      strokeWeight(1); // เส้นบางปกติ
+      noFill();
+      rect(i * cellSize, j * cellSize, cellSize, cellSize);
+    }
+  }
+
+  // วาดเส้นขอบหนาของบล็อก 3x3
+  stroke(0); // เส้นขอบสีดำ
+  strokeWeight(3); // เส้นขอบหนา
+  for (int i = 0; i <= gridSize; i++) {
+    if (i % 3 == 0) {
+      // วาดเส้นขอบหนาทุก 3 ช่อง
+      line(i * cellSize, 0, i * cellSize, height); // เส้นแนวตั้ง
+      line(0, i * cellSize, width, i * cellSize);  // เส้นแนวนอน
+    }
+  }
+
+  // วาดตัวเลขในช่อง
+  for (int i = 0; i < gridSize; i++) {
+    for (int j = 0; j < gridSize; j++) {
+      if (grid[i][j] != 0) {
+        fill(0); // สีของตัวเลขเป็นสีดำ
+        textAlign(CENTER, CENTER);
+        textSize(24);
+        text(grid[i][j], i * cellSize + cellSize / 2, j * cellSize + cellSize / 2);
+      }
+    }
+  }
+}
+
+
+
 void mousePressed() {
   if (screen.equals("menu")) {
     // ตรวจสอบว่าคลิกที่ปุ่ม Start หรือไม่
@@ -47,21 +102,29 @@ void mousePressed() {
       println("Exit button clicked");
       exit(); // ปิดโปรแกรม
     }
+  } else if (screen.equals("sudoku")) {
+    // คำนวณตำแหน่งแถวและคอลัมน์ที่คลิก
+    int gridSize = 9;
+    float cellSize = width / gridSize;
+    selectedRow = int(mouseX / cellSize);
+    selectedCol = int(mouseY / cellSize);
+    
+    println("Selected cell: (" + selectedRow + ", " + selectedCol + ")");
   }
 }
 
-// ฟังก์ชันวาดตารางซูโดกุ
-void drawSudokuGrid() {
-  int gridSize = 9;      // ซูโดกุเป็นตารางขนาด 9x9
-  float cellSize = width / gridSize;  // ขนาดของช่องแต่ละช่อง
-
-  stroke(0); // กำหนดสีเส้นขอบเป็นสีดำ
-
-  for (int i = 0; i <= gridSize; i++) {
-    // วาดเส้นแนวนอนและแนวตั้ง
-    strokeWeight(i % 3 == 0 ? 3 : 1); // เส้นหนาทุก 3 ช่อง
-    line(i * cellSize, 0, i * cellSize, height); // เส้นแนวตั้ง
-    line(0, i * cellSize, width, i * cellSize);  // เส้นแนวนอน
+void keyPressed() {
+  if (screen.equals("sudoku")) {
+    // ตรวจสอบว่ามีการเลือกช่องแล้วหรือไม่
+    if (selectedRow != -1 && selectedCol != -1) {
+      // ตรวจสอบว่าปุ่มที่กดเป็นตัวเลขระหว่าง 1 ถึง 9 หรือไม่
+      if (key >= '1' && key <= '9') {
+        grid[selectedRow][selectedCol] = int(key - '0'); // แปลงจากตัวอักษรเป็นตัวเลข
+      } else if (key == BACKSPACE) {
+        // กด Backspace เพื่อลบตัวเลขในช่องที่เลือก
+        grid[selectedRow][selectedCol] = 0;
+      }
+    }
   }
 }
 
