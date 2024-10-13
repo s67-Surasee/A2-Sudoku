@@ -17,6 +17,9 @@ void setup() {
   startButton = new PButton("Start", 150, 150, 150, 50, color(0, 150, 0));    // สีเขียวเข้ม
   loadButton = new PButton("Load", 150, 220, 150, 50, color(0, 0, 200));      // สีน้ำเงินเข้ม
   exitButton = new PButton("Exit", 150, 290, 150, 50, color(200, 0, 0));      // สีแดงเข้ม
+  
+  // เริ่มกรอกตัวเลขสุ่มในตาราง
+  fillGrid(); // เรียกใช้ฟังก์ชันเพื่อกรอกตัวเลขในตาราง
 }
 
 void draw() {
@@ -89,6 +92,41 @@ void drawSudokuGrid() {
   }
 }
 
+// ฟังก์ชันกรอกตัวเลขสุ่มในตาราง โดยไม่ให้เลขในแถว, คอลัมน์, และบล็อก 3x3 ซ้ำกัน
+void fillGrid() {
+  fillNumbers(0, 0); // เริ่มต้นกรอกตัวเลขจากแถว 0 คอลัมน์ 0
+}
+
+// ฟังก์ชันกรอกตัวเลขในตารางซูโดกุ
+boolean fillNumbers(int row, int col) {
+  if (row == 9) { // ถ้าเต็มตารางแล้ว
+    return true; // เสร็จสมบูรณ์
+  }
+
+  // ถัดไปในคอลัมน์
+  int nextRow = (col == 8) ? row + 1 : row;
+  int nextCol = (col + 1) % 9;
+
+  // ลองกรอกเลขตั้งแต่ 1 ถึง 9
+  for (int num = 1; num <= 9; num++) {
+    if (isValidMove(row, col, num)) {
+      grid[row][col] = num; // กรอกตัวเลข
+      isValid[row][col] = true; // ตั้งค่าสถานะเป็นถูกต้อง
+
+      // เรียกใช้ฟังก์ชันนี้ซ้ำเพื่อกรอกเลขถัดไป
+      if (fillNumbers(nextRow, nextCol)) {
+        return true; // ถ้ากรอกเลขถัดไปสำเร็จ
+      }
+
+      // ถ้ากรอกเลขถัดไปไม่สำเร็จ ให้ลบเลขนี้ออกและลองเลขถัดไป
+      grid[row][col] = 0; // ลบเลข
+      isValid[row][col] = false; // ตั้งค่าสถานะเป็นไม่ถูกต้อง
+    }
+  }
+  
+  return false; // ไม่สามารถกรอกเลขได้
+}
+
 // ฟังก์ชันตรวจสอบเลขซ้ำในแถว
 boolean checkRow(int row, int num) {
   for (int col = 0; col < 9; col++) {
@@ -129,57 +167,44 @@ boolean isValidMove(int row, int col, int num) {
   return checkRow(row, num) && checkCol(col, num) && checkSubGrid(row, col, num);
 }
 
+// ฟังก์ชันสำหรับจัดการคลิกเมาส์
 void mousePressed() {
+  float cellSize = width / 9; // ขนาดของช่อง
   if (screen.equals("menu")) {
-    // ตรวจสอบว่าคลิกที่ปุ่ม Start หรือไม่
+    // ตรวจสอบว่าคลิกที่ปุ่ม Start, Load หรือ Exit
     if (startButton.isClicked(mouseX, mouseY)) {
-      println("Start button clicked");
-      screen = "sudoku"; // เปลี่ยนหน้าจอเป็นเกมซูโดกุ
-    }
-    
-    // ตรวจสอบว่าคลิกที่ปุ่ม Load หรือไม่
-    if (loadButton.isClicked(mouseX, mouseY)) {
-      println("Load button clicked");
-    }
-    
-    // ตรวจสอบว่าคลิกที่ปุ่ม Exit หรือไม่ และปิดโปรแกรม
-    if (exitButton.isClicked(mouseX, mouseY)) {
-      println("Exit button clicked");
-      exit(); // ปิดโปรแกรม
+      screen = "sudoku"; // เปลี่ยนหน้าจอเป็นซูโดกุ
+    } else if (loadButton.isClicked(mouseX, mouseY)) {
+      // ทำงานที่ต้องการเมื่อคลิก Load
+    } else if (exitButton.isClicked(mouseX, mouseY)) {
+      exit(); // ออกจากโปรแกรม
     }
   } else if (screen.equals("sudoku")) {
-    // คำนวณตำแหน่งแถวและคอลัมน์ที่คลิก
-    int gridSize = 9;
-    float cellSize = width / gridSize;
-    selectedRow = int(mouseX / cellSize);
-    selectedCol = int(mouseY / cellSize);
-    
-    println("Selected cell: (" + selectedRow + ", " + selectedCol + ")");
+    // ตรวจสอบว่าคลิกในช่องซูโดกุหรือไม่
+    selectedRow = int(mouseX / cellSize); // หาตำแหน่งแถว
+    selectedCol = int(mouseY / cellSize); // หาตำแหน่งคอลัมน์
   }
 }
 
+// ฟังก์ชันสำหรับกดปุ่มและกรอกตัวเลข
 void keyPressed() {
-  if (screen.equals("sudoku")) {
-    // ตรวจสอบว่ามีการเลือกช่องแล้วหรือไม่
-    if (selectedRow != -1 && selectedCol != -1) {
-      // ตรวจสอบว่าปุ่มที่กดเป็นตัวเลขระหว่าง 1 ถึง 9 หรือไม่
-      if (key >= '1' && key <= '9') {
-        int numberToPlace = int(key - '0'); // แปลงจากตัวอักษรเป็นตัวเลข
-        
-        // ตรวจสอบความถูกต้องก่อนวางตัวเลข
-        if (isValidMove(selectedRow, selectedCol, numberToPlace)) {
-          grid[selectedRow][selectedCol] = numberToPlace; // วางตัวเลขในช่อง
-          isValid[selectedRow][selectedCol] = true; // ตัวเลขถูกต้อง
-        } else {
-          println("Invalid move"); // แสดงข้อความเมื่อมีการวางเลขไม่ถูกต้อง
-          grid[selectedRow][selectedCol] = numberToPlace; // วางตัวเลขไม่ถูกต้อง
-          isValid[selectedRow][selectedCol] = false; // ตัวเลขไม่ถูกต้อง
-        }
-      } else if (key == BACKSPACE) {
-        // กด Backspace เพื่อลบตัวเลขในช่องที่เลือก
-        grid[selectedRow][selectedCol] = 0;
-        isValid[selectedRow][selectedCol] = true; // ลบเลขแล้วทำให้สถานะถูกต้อง
+  if (screen.equals("sudoku") && selectedRow != -1 && selectedCol != -1) {
+    if (key >= '1' && key <= '9') {
+      int numberToPlace = key - '0'; // แปลงค่าตัวเลขจาก key เป็น int
+
+      // ตรวจสอบความถูกต้องในการวางตัวเลข
+      if (isValidMove(selectedRow, selectedCol, numberToPlace)) {
+        grid[selectedRow][selectedCol] = numberToPlace; // วางตัวเลข
+        isValid[selectedRow][selectedCol] = true; // ตัวเลขถูกต้อง
+      } else {
+        println("Invalid move"); // แสดงข้อความเมื่อมีการวางเลขไม่ถูกต้อง
+        grid[selectedRow][selectedCol] = numberToPlace; // วางตัวเลขไม่ถูกต้อง
+        isValid[selectedRow][selectedCol] = false; // ตัวเลขไม่ถูกต้อง
       }
+    } else if (key == BACKSPACE) {
+      // กด Backspace เพื่อลบตัวเลขในช่องที่เลือก
+      grid[selectedRow][selectedCol] = 0;
+      isValid[selectedRow][selectedCol] = true; // ลบเลขแล้วทำให้สถานะถูกต้อง
     }
   }
 }
