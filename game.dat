@@ -1,3 +1,4 @@
+import java.util.Collections;
 // ตัวแปรสำหรับปุ่ม
 PButton startButton, loadButton, exitButton;
 
@@ -19,7 +20,7 @@ void setup() {
   exitButton = new PButton("Exit", 150, 290, 150, 50, color(200, 0, 0));      // สีแดงเข้ม
   
   // เริ่มกรอกตัวเลขสุ่มในตาราง
-  fillGrid(); // เรียกใช้ฟังก์ชันเพื่อกรอกตัวเลขในตาราง
+  generateUniqueSudokuGrid(); // เรียกใช้ฟังก์ชันเพื่อสร้างกริดที่ไม่ซ้ำกัน
 }
 
 void draw() {
@@ -35,6 +36,11 @@ void draw() {
     background(255); // ล้างหน้าจอด้วยสีขาว
     drawSudokuGrid();
   }
+}
+
+void generateUniqueSudokuGrid() {
+  fillNumbers(0, 0); // เริ่มต้นกรอกตัวเลขจากแถว 0 คอลัมน์ 0
+  removeNumbers(); // ลบหมายเลขบางตัวเพื่อทำให้เป็นปริศนา
 }
 
 // ฟังก์ชันวาดตารางซูโดกุโดยใช้สี่เหลี่ยม
@@ -107,8 +113,15 @@ boolean fillNumbers(int row, int col) {
   int nextRow = (col == 8) ? row + 1 : row;
   int nextCol = (col + 1) % 9;
 
-  // ลองกรอกเลขตั้งแต่ 1 ถึง 9
+  // สุ่มตัวเลขจาก 1 ถึง 9
+  ArrayList<Integer> numbers = new ArrayList<Integer>();
   for (int num = 1; num <= 9; num++) {
+    numbers.add(num);
+  }
+  Collections.shuffle(numbers); // สุ่มหมายเลข
+
+  // ลองกรอกเลขในลำดับที่สุ่ม
+  for (int num : numbers) {
     if (isValidMove(row, col, num)) {
       grid[row][col] = num; // กรอกตัวเลข
       isValid[row][col] = true; // ตั้งค่าสถานะเป็นถูกต้อง
@@ -236,5 +249,35 @@ class PButton {
   // ตรวจสอบว่าพิกัดเมาส์ (mx, my) อยู่ภายในปุ่มหรือไม่
   boolean isClicked(float mx, float my) {
     return (mx > x && mx < x + w && my > y && my < y + h);
+  }
+}
+
+// ฟังก์ชันสำหรับสุ่มตัวเลขในตารางซูโดกุ
+void shuffleGrid() {
+  // เริ่มต้นกริดเป็นศูนย์
+  for (int i = 0; i < 9; i++) {
+    for (int j = 0; j < 9; j++) {
+      grid[i][j] = 0; // ล้างค่าในกริด
+      isValid[i][j] = false; // ตั้งค่าสถานะเป็นไม่ถูกต้อง
+    }
+  }
+
+  // กรอกตัวเลขสุ่มในตาราง
+  fillNumbers(0, 0); // เรียกฟังก์ชันกรอกตัวเลขจากแถว 0 คอลัมน์ 0
+
+  // ลบหมายเลขบางช่องเพื่อนำไปใช้เป็นปริศนาซูโดกุ
+  removeNumbers();
+}
+
+// ฟังก์ชันสำหรับลบหมายเลขบางช่องในกริดเพื่อทำให้เป็นปริศนา
+void removeNumbers() {
+  int count = 0; // นับจำนวนหมายเลขที่ถูกลบ
+  while (count < 40) { // ลบ 40 หมายเลข (หรือปรับได้ตามต้องการ)
+    int i = int(random(9));
+    int j = int(random(9));
+    if (grid[i][j] != 0) { // ตรวจสอบว่าช่องนี้มีตัวเลขหรือไม่
+      grid[i][j] = 0; // ลบตัวเลข
+      count++;
+    }
   }
 }
