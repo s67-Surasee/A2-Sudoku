@@ -189,17 +189,17 @@ boolean isValidMove(int row, int col, int num) {
   return checkRow(row, num) && checkCol(col, num) && checkSubGrid(row, col, num);
 }
 
-// ฟังก์ชันสำหรับจัดการคลิกเมาส์
 void mousePressed() {
-  float cellSize = width / 9; // ขนาดของช่อง
+  float cellSize = width / 9; // ขนาดของช่องซูโดกุ
   if (screen.equals("menu")) {
     // ตรวจสอบว่าคลิกที่ปุ่ม Start, Load หรือ Exit
     if (startButton.isClicked(mouseX, mouseY)) {
       screen = "sudoku"; // เปลี่ยนหน้าจอเป็นซูโดกุ
     } else if (loadButton.isClicked(mouseX, mouseY)) {
-      // ทำงานที่ต้องการเมื่อคลิก Load
+      loadGame(); // เรียกใช้ฟังก์ชัน loadGame() เมื่อคลิกที่ปุ่ม Load
+      screen = "play"; // เปลี่ยนหน้าจอเป็น play เมื่อโหลดเกมสำเร็จ
     } else if (exitButton.isClicked(mouseX, mouseY)) {
-      exit(); // ออกจากโปรแกรม
+      exit(); // ออกจากโปรแกรมเมื่อคลิก Exit
     }
   } else if (screen.equals("sudoku")) {
     // ตรวจสอบว่าคลิกในช่องซูโดกุหรือไม่
@@ -222,18 +222,22 @@ void keyPressed() {
         grid[selectedRow][selectedCol] = numberToPlace; // วางตัวเลขไม่ถูกต้อง
         isValid[selectedRow][selectedCol] = false; // ตัวเลขไม่ถูกต้อง
       }
-      
+
       // ตรวจสอบการชนะ
       checkWin(); // ตรวจสอบว่าชนะหรือไม่
     } else if (key == BACKSPACE) {
       // กด Backspace เพื่อลบตัวเลขในช่องที่เลือก
       grid[selectedRow][selectedCol] = 0;
       isValid[selectedRow][selectedCol] = false; // ตั้งค่าสถานะเป็นไม่ถูกต้อง
+    } else if (key == 's' || key == 'S') {
+      // กดปุ่ม 's' หรือ 'S' เพื่อบันทึกเกม
+      saveGame(); // เรียกใช้ฟังก์ชัน saveGame() เพื่อบันทึกเกม
+    } else if (key == 'l' || key == 'L') {
+      // กดปุ่ม 'l' หรือ 'L' เพื่อโหลดเกม
+      loadGame(); // เรียกใช้ฟังก์ชัน loadGame() เพื่อโหลดเกม
     }
   }
 }
-
-
 
 // คลาสสำหรับปุ่ม
 class PButton {
@@ -304,6 +308,75 @@ void checkWin() {
         isWon = false; // ถ้ามีช่องที่ว่างหรือตัวเลขไม่ถูกต้อง ตั้งค่าสถานะชนะเป็น false
         return; // ออกจากฟังก์ชัน
       }
+    }
+  }
+}
+
+String[] intArrayToStringArray(int[][] grid) {
+  String[] result = new String[9]; // Array ขนาด 9x1 เพื่อเก็บข้อมูลของแต่ละแถว
+  for (int i = 0; i < 9; i++) {
+    String[] row = new String[9]; // สร้าง Array ของ string ขนาด 9 สำหรับเก็บข้อมูลของแต่ละแถว
+    for (int j = 0; j < 9; j++) {
+      row[j] = str(grid[i][j]); // แปลงค่าตัวเลขในกริดเป็น string
+    }
+    result[i] = join(row, ","); // ใช้ฟังก์ชัน join() เพื่อเชื่อม string โดยคั่นด้วยเครื่องหมายจุลภาค
+  }
+  return result;
+}
+
+void saveGame() {
+  selectOutput("Select a location to save:", "savetoFile");
+}
+
+// ฟังก์ชัน callback ที่ทำงานเมื่อเลือกไฟล์
+void savetoFile(File selection) {
+  if (selection == null) {
+    println("No file was selected"); // หากผู้ใช้ไม่ได้เลือกไฟล์
+  } else {
+    String[] lines = new String[9]; // สร้าง array เพื่อเก็บข้อมูล 9 แถว
+
+    int i = 0;
+    while (i < 9) {
+      String[] row = new String[9];
+      int j = 0;
+      while (j < 9) {
+        row[j] = str(grid[i][j]); // แปลงตัวเลขในกริดเป็นข้อความ
+        j++;
+      }
+      lines[i] = join(row, ','); // รวมข้อความในแต่ละแถวและคั่นด้วยจุลภาค
+      i++;
+    }
+
+    // บันทึกไฟล์โดยใช้ตำแหน่งที่เลือก
+    saveStrings(selection.getAbsolutePath(), lines);
+    println("Game Saved"); // แสดงข้อความเมื่อบันทึกสำเร็จ
+  }
+}
+
+void loadGame() {
+  selectInput("Select a file to load:", "loadFromFile");
+}
+
+void loadFromFile(File selection) {
+  if (selection == null) {
+    println("No file was selected");  // กรณีไม่ได้เลือกไฟล์
+  } else {
+    String[] loadedData = loadStrings(selection.getAbsolutePath());  // โหลดข้อมูลจากไฟล์
+    if (loadedData != null && loadedData.length == 9) {
+      int i = 0;
+      while (i < 9) {
+        String[] row = split(loadedData[i], ',');  // แยกข้อมูลด้วยเครื่องหมายจุลภาค
+        int j = 0;
+        while (j < 9) {
+          grid[i][j] = int(row[j]);  // แปลงข้อมูลเป็น int และเก็บในตารางเกม
+          j++;
+        }
+        i++;
+      }
+      println("Game Loaded");  // แสดงข้อความว่าเกมถูกโหลดแล้ว
+      screen = "sudoku";  // เปลี่ยนหน้าจอเป็นหน้า Sudoku หลังจากโหลดเสร็จ
+    } else {
+      println("Error loading game. File may be corrupted or missing.");
     }
   }
 }
