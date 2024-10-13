@@ -1,6 +1,9 @@
 // ตัวแปรสำหรับปุ่ม
 PButton startButton, loadButton, exitButton;
 
+// สถานะของหน้าจอปัจจุบัน
+String screen = "menu"; // เริ่มต้นที่หน้าจอเมนู
+
 void setup() {
   size(450, 450);  // ขนาดหน้าต่าง 450x450 พิกเซล
   background(255); // ตั้งค่าสีพื้นหลังเป็นสีขาว
@@ -12,27 +15,53 @@ void setup() {
 }
 
 void draw() {
-  // แสดงปุ่ม
-  startButton.display();
-  loadButton.display();
-  exitButton.display();
+  // ตรวจสอบสถานะของหน้าจอ
+  if (screen.equals("menu")) {
+    // แสดงเมนู
+    background(255); // ล้างหน้าจอด้วยสีขาว
+    startButton.display();
+    loadButton.display();
+    exitButton.display();
+  } else if (screen.equals("sudoku")) {
+    // แสดงหน้าจอซูโดกุ
+    background(255); // ล้างหน้าจอด้วยสีขาว
+    drawSudokuGrid();
+  }
 }
 
 void mousePressed() {
-  // ตรวจสอบว่าคลิกที่ปุ่ม Start หรือไม่
-  if (startButton.isClicked(mouseX, mouseY)) {
-    println("Start button clicked");
+  if (screen.equals("menu")) {
+    // ตรวจสอบว่าคลิกที่ปุ่ม Start หรือไม่
+    if (startButton.isClicked(mouseX, mouseY)) {
+      println("Start button clicked");
+      screen = "sudoku"; // เปลี่ยนหน้าจอเป็นเกมซูโดกุ
+    }
+    
+    // ตรวจสอบว่าคลิกที่ปุ่ม Load หรือไม่
+    if (loadButton.isClicked(mouseX, mouseY)) {
+      println("Load button clicked");
+    }
+    
+    // ตรวจสอบว่าคลิกที่ปุ่ม Exit หรือไม่ และปิดโปรแกรม
+    if (exitButton.isClicked(mouseX, mouseY)) {
+      println("Exit button clicked");
+      exit(); // ปิดโปรแกรม
+    }
   }
-  
-  // ตรวจสอบว่าคลิกที่ปุ่ม Load หรือไม่
-  if (loadButton.isClicked(mouseX, mouseY)) {
-    println("Load button clicked");
-  }
-  
-  // ตรวจสอบว่าคลิกที่ปุ่ม Exit หรือไม่ และปิดโปรแกรม
-  if (exitButton.isClicked(mouseX, mouseY)) {
-    println("Exit button clicked");
-    exit(); // ปิดโปรแกรม
+}
+
+// ฟังก์ชันวาดตารางซูโดกุ
+void drawSudokuGrid() {
+  int gridSize = 9;      // ซูโดกุเป็นตารางขนาด 9x9
+  float cellSize = width / gridSize;  // ขนาดของช่องแต่ละช่อง
+
+  stroke(0); // กำหนดสีเส้นขอบเป็นสีดำ
+
+  for (int i = 0; i <= gridSize; i++) {
+    // วาดเส้นแนวนอนและแนวตั้ง
+    strokeWeight(i % 3 == 0 ? 3 : 1); // เส้นหนาทุก 3 ช่อง
+    line(i * cellSize, 0, i * cellSize, height); // เส้นแนวตั้ง
+    line(0, i * cellSize, width, i * cellSize);  // เส้นแนวนอน
   }
 }
 
