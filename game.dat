@@ -1,28 +1,30 @@
+import java.util.ArrayList;
 import java.util.Collections;
 
 // ตัวแปรสำหรับปุ่ม
-PButton startButton, loadButton, exitButton, rightExitButton;
+PButton startButton, loadButton, exitButton, rightExitButton, solveButton;
 
 // สถานะของหน้าจอปัจจุบัน
 String screen = "menu"; // เริ่มต้นที่หน้าจอเมนู
 
 // ตารางซูโดกุขนาด 9x9
 int[][] grid = new int[9][9]; // เก็บตัวเลขในแต่ละช่อง
+int[][] originalGrid = new int[9][9]; // เก็บตัวเลขที่ถูกสร้างขึ้นเพื่อใช้ในการเฉลย
 boolean[][] isValid = new boolean[9][9]; // เก็บสถานะความถูกต้องของแต่ละช่อง
 int selectedRow = -1, selectedCol = -1; // ตำแหน่งช่องที่ถูกเลือก
 boolean isWon = false;
 
 void setup() {
-  size(600, 450);  // ขยายขนาดหน้าต่างเป็น 600x450 พิกเซล (ขยายด้านข้าง)
+  size(600, 450); // ขยายขนาดหน้าต่างเป็น 600x450 พิกเซล (ขยายด้านข้าง)
   background(255); // ตั้งค่าสีพื้นหลังเป็นสีขาว
   
   // สร้างปุ่ม Start, Load, Exit โดยกำหนดสีเข้มขึ้น
-  startButton = new PButton("Start", 150, 150, 150, 50, color(0, 150, 0));    // สีเขียวเข้ม
-  loadButton = new PButton("Load", 150, 220, 150, 50, color(0, 0, 200));      // สีน้ำเงินเข้ม
-  exitButton = new PButton("Exit", 150, 290, 150, 50, color(200, 0, 0));      // สีแดงเข้ม
-
-  // เพิ่มปุ่ม Exit ข้างขวาของหน้าจอซูโดกุ
-  rightExitButton = new PButton("Exit", 470, 50, 100, 50, color(200, 0, 0)); // ปุ่มออกทางด้านขวาของหน้าจอ
+  startButton = new PButton("Start", 225, 150, 150, 50, color(178, 113, 0));    // สีเขียวเข้ม
+  loadButton = new PButton("Load", 225, 220, 150, 50, color(178, 113, 0));      // สีน้ำเงินเข้ม
+  exitButton = new PButton("Exit", 225, 290, 150, 50, color(178, 113, 0));      // สีแดงเข้ม
+  
+  solveButton = new PButton("Reveal", 470, 50, 100, 50, color(178, 113, 0));
+  rightExitButton = new PButton("Exit", 470, 120, 100, 50, color(178, 113, 0)); // ปุ่มออกทางด้านขวาของหน้าจอ
   
   // เริ่มกรอกตัวเลขสุ่มในตาราง
   generateUniqueSudokuGrid(); // เรียกใช้ฟังก์ชันเพื่อสร้างกริดที่ไม่ซ้ำกัน
@@ -41,9 +43,8 @@ void draw() {
     background(255); // ล้างหน้าจอด้วยสีขาว
     drawSudokuGrid();
     
-    // แสดงปุ่ม Exit ข้างขวา
     rightExitButton.display();
-    
+    solveButton.display();
     // ตรวจสอบว่าชนะหรือไม่
     if (isWon) {
       fill(0); // กำหนดสีข้อความเป็นสีดำ
@@ -56,6 +57,7 @@ void draw() {
 
 void generateUniqueSudokuGrid() {
   fillNumbers(0, 0); // เริ่มต้นกรอกตัวเลขจากแถว 0 คอลัมน์ 0
+  copyGrid(); // คัดลอกตัวเลขที่ถูกกรอกไปยัง originalGrid
   removeNumbers(); // ลบหมายเลขบางตัวเพื่อทำให้เป็นปริศนา
 }
 
@@ -114,6 +116,15 @@ void drawSudokuGrid() {
   }
 }
 
+// ฟังก์ชันคัดลอกหมายเลขในตารางไปยัง originalGrid
+void copyGrid() {
+  for (int i = 0; i < 9; i++) {
+    for (int j = 0; j < 9; j++) {
+      originalGrid[i][j] = grid[i][j]; // คัดลอกเลขจาก grid ไปยัง originalGrid
+    }
+  }
+}
+
 // ฟังก์ชันกรอกตัวเลขสุ่มในตาราง โดยไม่ให้เลขในแถว, คอลัมน์, และบล็อก 3x3 ซ้ำกัน
 void fillGrid() {
   fillNumbers(0, 0); // เริ่มต้นกรอกตัวเลขจากแถว 0 คอลัมน์ 0
@@ -153,61 +164,75 @@ boolean fillNumbers(int row, int col) {
     }
   }
   
-  return false; // ไม่สามารถกรอกเลขได้
+  return false; // ถ้าทั้งหมดไม่สำเร็จ
 }
 
-// ฟังก์ชันตรวจสอบเลขซ้ำในแถว
-boolean checkRow(int row, int num) {
-  for (int col = 0; col < 9; col++) {
-    if (grid[row][col] == num) {
-      return false; // พบเลขซ้ำ
+// ฟังก์ชันตรวจสอบความถูกต้องในการกรอกตัวเลข
+boolean isValidMove(int row, int col, int num) {
+  for (int i = 0; i < 9; i++) {
+    if (grid[row][i] == num || grid[i][col] == num || grid[row / 3 * 3 + i / 3][col / 3 * 3 + i % 3] == num) {
+      return false; // ถ้ามีเลขซ้ำให้คืนค่า false
     }
   }
-  return true; // ไม่มีเลขซ้ำ
+  return true; // ถ้าไม่มีเลขซ้ำให้คืนค่า true
 }
 
-// ฟังก์ชันตรวจสอบเลขซ้ำในคอลัมน์
-boolean checkCol(int col, int num) {
-  for (int row = 0; row < 9; row++) {
-    if (grid[row][col] == num) {
-      return false; // พบเลขซ้ำ
+// ฟังก์ชันลบหมายเลขบางตัวออกจากกริด
+void removeNumbers() {
+  int removeCount = 40; // จำนวนเลขที่ต้องลบ
+
+  while (removeCount > 0) {
+    int row = (int) random(0, 9); // เลือกแถวแบบสุ่ม
+    int col = (int) random(0, 9); // เลือกคอลัมน์แบบสุ่ม
+    if (grid[row][col] != 0) {
+      grid[row][col] = 0; // ลบหมายเลข
+      removeCount--;
     }
   }
-  return true; // ไม่มีเลขซ้ำ
 }
 
-// ฟังก์ชันตรวจสอบเลขซ้ำในบล็อก 3x3
-boolean checkSubGrid(int row, int col, int num) {
-  int startRow = row - row % 3;
-  int startCol = col - col % 3;
-  
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j++) {
-      if (grid[i + startRow][j + startCol] == num) {
-        return false; // พบเลขซ้ำ
+// ฟังก์ชันตรวจสอบการคลิกปุ่ม
+void mousePressed() {
+  if (screen.equals("menu")) {
+    if (startButton.isMouseOver()) {
+      screen = "sudoku"; // เปลี่ยนไปยังหน้าจอซูโดกุเมื่อกดปุ่ม Start
+    } else if (loadButton.isMouseOver()) {
+      loadGame();
+      screen = "play";
+      // เพิ่มฟังก์ชันการโหลดเกมในอนาคต
+    } else if (exitButton.isMouseOver()) {
+      exit(); // ออกจากโปรแกรม
+    }
+  } else if (screen.equals("sudoku")) {
+    // ตรวจสอบว่าผู้ใช้กดช่องไหนในตาราง
+    int gridSize = 9; // ขนาดตาราง 9x9
+    float cellSize = 400 / gridSize; // ขนาดของช่อง
+    for (int i = 0; i < gridSize; i++) {
+      for (int j = 0; j < gridSize; j++) {
+        if (mouseX > i * cellSize && mouseX < (i + 1) * cellSize && mouseY > j * cellSize && mouseY < (j + 1) * cellSize) {
+          selectedRow = i; // ตั้งค่าตำแหน่งแถวที่ถูกเลือก
+          selectedCol = j; // ตั้งค่าตำแหน่งคอลัมน์ที่ถูกเลือก
+          break; // ออกจากลูป
+        }
       }
     }
+
+    // ตรวจสอบว่ากดปุ่ม Exit หรือ Reveal
+    if (rightExitButton.isMouseOver()) {
+      exit(); // กลับไปที่หน้าจอเมนู
+    } else if (solveButton.isMouseOver()) {
+      revealNumbers(); // เปิดเผยหมายเลขที่ถูกต้อง
+    }
   }
-  return true; // ไม่มีเลขซ้ำ
 }
 
-// ฟังก์ชันตรวจสอบว่าการใส่เลขนี้ถูกต้องหรือไม่
-boolean isValidMove(int row, int col, int num) {
-  return checkRow(row, num) && checkCol(col, num) && checkSubGrid(row, col, num);
-}
-
-// ฟังก์ชันลบหมายเลขบางตัวออกจากกริดเพื่อสร้างปริศนา
-void removeNumbers() {
-  int totalCells = 81;
-  int cellsToRemove = 30; // กำหนดจำนวนช่องที่ต้องการลบตัวเลข
-
-  while (cellsToRemove > 0) {
-    int row = (int)random(9);
-    int col = (int)random(9);
-    
-    if (grid[row][col] != 0) { // ถ้าช่องนี้ยังมีเลขอยู่
-      grid[row][col] = 0; // ลบเลขออกจากช่องนี้
-      cellsToRemove--; // ลดจำนวนช่องที่ต้องลบ
+// ฟังก์ชันสำหรับเปิดเผยหมายเลขที่ถูกต้องในตาราง
+void revealNumbers() {
+  for (int i = 0; i < 9; i++) {
+    for (int j = 0; j < 9; j++) {
+      if (originalGrid[i][j] != 0) { // ตรวจสอบหมายเลขที่ไม่เป็นศูนย์ใน originalGrid
+        grid[i][j] = originalGrid[i][j]; // กำหนดค่ากลับไปที่ grid
+      }
     }
   }
 }
@@ -233,45 +258,9 @@ void keyPressed() {
       // กด Backspace เพื่อลบตัวเลขในช่องที่เลือก
       grid[selectedRow][selectedCol] = 0;
       isValid[selectedRow][selectedCol] = false; // ตั้งค่าสถานะเป็นไม่ถูกต้อง
-    } else if (key == 's' || key == 'S') {
-      // กดปุ่ม 's' หรือ 'S' เพื่อบันทึกเกม
-      saveGame(); // เรียกใช้ฟังก์ชัน saveGame() เพื่อบันทึกเกม
     } else if (key == 'l' || key == 'L') {
       // กดปุ่ม 'l' หรือ 'L' เพื่อโหลดเกม
       loadGame(); // เรียกใช้ฟังก์ชัน loadGame() เพื่อโหลดเกม
-    }
-  }
-}
-
-void saveGame() {
-  selectOutput("Select a location to save:", "savetoFile");
-}
-
-void loadGame() {
-  selectInput("Select a file to load:", "loadFromFile");
-}
-
-// ฟังก์ชันจัดการการคลิกเมาส์
-void mousePressed() {
-  float cellSize = 400 / 9; // ขนาดของช่องซูโดกุ
-  if (screen.equals("menu")) {
-    // ตรวจสอบว่าคลิกที่ปุ่ม Start, Load หรือ Exit
-    if (startButton.isClicked(mouseX, mouseY)) {
-      screen = "sudoku"; // เปลี่ยนหน้าจอเป็นซูโดกุ
-    } else if (loadButton.isClicked(mouseX, mouseY)) {
-      // (จะเพิ่มฟังก์ชันโหลดเกมถ้ามี)
-      screen = "play"; // เปลี่ยนหน้าจอเป็น play เมื่อโหลดเกมสำเร็จ
-    } else if (exitButton.isClicked(mouseX, mouseY)) {
-      exit(); // ออกจากโปรแกรมเมื่อคลิก Exit
-    }
-  } else if (screen.equals("sudoku")) {
-    // ตรวจสอบว่าคลิกในช่องซูโดกุหรือไม่
-    selectedRow = int(mouseX / cellSize); // หาตำแหน่งแถว
-    selectedCol = int(mouseY / cellSize); // หาตำแหน่งคอลัมน์
-
-    // ตรวจสอบว่าคลิกที่ปุ่ม Exit ข้างขวาหรือไม่
-    if (rightExitButton.isClicked(mouseX, mouseY)) {
-      exit(); // ออกจากโปรแกรมเมื่อคลิกปุ่ม Exit ข้างขวา
     }
   }
 }
@@ -294,27 +283,85 @@ void checkWin() {
 class PButton {
   String label;
   float x, y, w, h;
-  int col;
+  color c;
 
-  PButton(String label, float x, float y, float w, float h, int col) {
+  PButton(String label, float x, float y, float w, float h, color c) {
     this.label = label;
     this.x = x;
     this.y = y;
     this.w = w;
     this.h = h;
-    this.col = col;
+    this.c = c;
   }
 
   void display() {
-    fill(col); // ตั้งค่าสีของปุ่ม
-    rect(x, y, w, h); // วาดสี่เหลี่ยมเป็นปุ่ม
-    fill(255); // สีของข้อความเป็นสีขาว
+    fill(c); // กำหนดสีพื้นหลังปุ่ม
+    rect(x, y, w, h, 10); // วาดปุ่ม
+
+    fill(255); // กำหนดสีข้อความเป็นสีขาว
     textAlign(CENTER, CENTER);
-    textSize(20);
-    text(label, x + w / 2, y + h / 2); // แสดงข้อความในปุ่ม
+    textSize(24);
+    text(label, x + w / 2, y + h / 2); // แสดงข้อความบนปุ่ม
   }
 
-  boolean isClicked(float mx, float my) {
-    return mx > x && mx < x + w && my > y && my < y + h; // ตรวจสอบว่าคลิกภายในขอบเขตของปุ่มหรือไม่
+  boolean isMouseOver() {
+    return mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h; // ตรวจสอบการคลิกปุ่ม
+  }
+}
+
+void saveGame() {
+  selectOutput("Select a location to save:", "savetoFile");
+}
+
+// ฟังก์ชัน callback ที่ทำงานเมื่อเลือกไฟล์
+void savetoFile(File selection) {
+  if (selection == null) {
+    println("No file was selected"); // หากผู้ใช้ไม่ได้เลือกไฟล์
+  } else {
+    String[] lines = new String[9]; // สร้าง array เพื่อเก็บข้อมูล 9 แถว
+
+    int i = 0;
+    while (i < 9) {
+      String[] row = new String[9];
+      int j = 0;
+      while (j < 9) {
+        row[j] = str(grid[i][j]); // แปลงตัวเลขในกริดเป็นข้อความ
+        j++;
+      }
+      lines[i] = join(row, ','); // รวมข้อความในแต่ละแถวและคั่นด้วยจุลภาค
+      i++;
+    }
+
+    // บันทึกไฟล์โดยใช้ตำแหน่งที่เลือก
+    saveStrings(selection.getAbsolutePath(), lines);
+    println("Game Saved"); // แสดงข้อความเมื่อบันทึกสำเร็จ
+  }
+}
+
+void loadGame() {
+  selectInput("Select a file to load:", "loadFromFile");
+}
+
+void loadFromFile(File selection) {
+  if (selection == null) {
+    println("No file was selected");  // กรณีไม่ได้เลือกไฟล์
+  } else {
+    String[] loadedData = loadStrings(selection.getAbsolutePath());  // โหลดข้อมูลจากไฟล์
+    if (loadedData != null && loadedData.length == 9) {
+      int i = 0;
+      while (i < 9) {
+        String[] row = split(loadedData[i], ',');  // แยกข้อมูลด้วยเครื่องหมายจุลภาค
+        int j = 0;
+        while (j < 9) {
+          grid[i][j] = int(row[j]);  // แปลงข้อมูลเป็น int และเก็บในตารางเกม
+          j++;
+        }
+        i++;
+      }
+      println("Game Loaded");  // แสดงข้อความว่าเกมถูกโหลดแล้ว
+      screen = "sudoku";  // เปลี่ยนหน้าจอเป็นหน้า Sudoku หลังจากโหลดเสร็จ
+    } else {
+      println("Error loading game. File may be corrupted or missing.");
+    }
   }
 }
