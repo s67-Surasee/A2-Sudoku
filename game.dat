@@ -2,7 +2,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 // ตัวแปรสำหรับปุ่ม
-PButton startButton, loadButton, exitButton, rightExitButton, solveButton;
+PButton startButton, loadButton, exitButton, rightExitButton, revealButton, saveButton;
 
 // สถานะของหน้าจอปัจจุบัน
 String screen = "menu"; // เริ่มต้นที่หน้าจอเมนู
@@ -23,8 +23,9 @@ void setup() {
   loadButton = new PButton("Load", 225, 220, 150, 50, color(178, 113, 0));      // สีน้ำเงินเข้ม
   exitButton = new PButton("Exit", 225, 290, 150, 50, color(178, 113, 0));      // สีแดงเข้ม
   
-  solveButton = new PButton("Reveal", 470, 50, 100, 50, color(178, 113, 0));
-  rightExitButton = new PButton("Exit", 470, 120, 100, 50, color(178, 113, 0)); // ปุ่มออกทางด้านขวาของหน้าจอ
+  saveButton = new PButton("Save", 470, 50, 100, 50, color(178, 113, 0));
+  revealButton = new PButton("Reveal", 470, 120, 100, 50, color(178, 113, 0));
+  rightExitButton = new PButton("Exit", 470, 190, 100, 50, color(178, 113, 0)); // ปุ่มออกทางด้านขวาของหน้าจอ
   
   // เริ่มกรอกตัวเลขสุ่มในตาราง
   generateUniqueSudokuGrid(); // เรียกใช้ฟังก์ชันเพื่อสร้างกริดที่ไม่ซ้ำกัน
@@ -43,8 +44,9 @@ void draw() {
     background(255); // ล้างหน้าจอด้วยสีขาว
     drawSudokuGrid();
     
+    saveButton.display();
     rightExitButton.display();
-    solveButton.display();
+    revealButton.display();
     // ตรวจสอบว่าชนะหรือไม่
     if (isWon) {
       fill(0); // กำหนดสีข้อความเป็นสีดำ
@@ -220,7 +222,9 @@ void mousePressed() {
     // ตรวจสอบว่ากดปุ่ม Exit หรือ Reveal
     if (rightExitButton.isMouseOver()) {
       exit(); // กลับไปที่หน้าจอเมนู
-    } else if (solveButton.isMouseOver()) {
+    } else if (saveButton.isMouseOver()) {
+      saveGame(); // เปิดเผยหมายเลขที่ถูกต้อง
+    }else if (revealButton.isMouseOver()) {
       revealNumbers(); // เปิดเผยหมายเลขที่ถูกต้อง
     }
   }
@@ -258,6 +262,9 @@ void keyPressed() {
       // กด Backspace เพื่อลบตัวเลขในช่องที่เลือก
       grid[selectedRow][selectedCol] = 0;
       isValid[selectedRow][selectedCol] = false; // ตั้งค่าสถานะเป็นไม่ถูกต้อง
+    } else if (key == 's' || key == 'S') {
+      // กดปุ่ม 's' หรือ 'S' เพื่อบันทึกเกม
+      saveGame(); // เรียกใช้ฟังก์ชัน saveGame() เพื่อบันทึกเกม
     } else if (key == 'l' || key == 'L') {
       // กดปุ่ม 'l' หรือ 'L' เพื่อโหลดเกม
       loadGame(); // เรียกใช้ฟังก์ชัน loadGame() เพื่อโหลดเกม
@@ -344,7 +351,7 @@ void loadGame() {
 
 void loadFromFile(File selection) {
   if (selection == null) {
-    println("No file was selected");  // กรณีไม่ได้เลือกไฟล์
+    println("No file was selected"); 
   } else {
     String[] loadedData = loadStrings(selection.getAbsolutePath());  // โหลดข้อมูลจากไฟล์
     if (loadedData != null && loadedData.length == 9) {
