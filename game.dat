@@ -199,7 +199,7 @@ boolean isValidMove(int row, int col, int num) {
 // ฟังก์ชันลบหมายเลขบางตัวออกจากกริดเพื่อสร้างปริศนา
 void removeNumbers() {
   int totalCells = 81;
-  int cellsToRemove = 50; // กำหนดจำนวนช่องที่ต้องการลบตัวเลข
+  int cellsToRemove = 30; // กำหนดจำนวนช่องที่ต้องการลบตัวเลข
 
   while (cellsToRemove > 0) {
     int row = (int)random(9);
@@ -210,6 +210,45 @@ void removeNumbers() {
       cellsToRemove--; // ลดจำนวนช่องที่ต้องลบ
     }
   }
+}
+
+void keyPressed() {
+  if (screen.equals("sudoku") && selectedRow != -1 && selectedCol != -1) {
+    if (key >= '1' && key <= '9') {
+      int numberToPlace = key - '0'; // แปลงค่าตัวเลขจาก key เป็น int
+
+      // ตรวจสอบความถูกต้องในการวางตัวเลข
+      if (isValidMove(selectedRow, selectedCol, numberToPlace)) {
+        grid[selectedRow][selectedCol] = numberToPlace; // วางตัวเลข
+        isValid[selectedRow][selectedCol] = true; // ตัวเลขถูกต้อง
+      } else {
+        println("Invalid move"); // แสดงข้อความเมื่อมีการวางเลขไม่ถูกต้อง
+        grid[selectedRow][selectedCol] = numberToPlace; // วางตัวเลขไม่ถูกต้อง
+        isValid[selectedRow][selectedCol] = false; // ตัวเลขไม่ถูกต้อง
+      }
+
+      // ตรวจสอบการชนะ
+      checkWin(); // ตรวจสอบว่าชนะหรือไม่
+    } else if (key == BACKSPACE) {
+      // กด Backspace เพื่อลบตัวเลขในช่องที่เลือก
+      grid[selectedRow][selectedCol] = 0;
+      isValid[selectedRow][selectedCol] = false; // ตั้งค่าสถานะเป็นไม่ถูกต้อง
+    } else if (key == 's' || key == 'S') {
+      // กดปุ่ม 's' หรือ 'S' เพื่อบันทึกเกม
+      saveGame(); // เรียกใช้ฟังก์ชัน saveGame() เพื่อบันทึกเกม
+    } else if (key == 'l' || key == 'L') {
+      // กดปุ่ม 'l' หรือ 'L' เพื่อโหลดเกม
+      loadGame(); // เรียกใช้ฟังก์ชัน loadGame() เพื่อโหลดเกม
+    }
+  }
+}
+
+void saveGame() {
+  selectOutput("Select a location to save:", "savetoFile");
+}
+
+void loadGame() {
+  selectInput("Select a file to load:", "loadFromFile");
 }
 
 // ฟังก์ชันจัดการการคลิกเมาส์
@@ -236,6 +275,20 @@ void mousePressed() {
     }
   }
 }
+
+void checkWin() {
+  isWon = true; // ตั้งค่าสถานะชนะเป็น true
+  for (int i = 0; i < 9; i++) {
+    for (int j = 0; j < 9; j++) {
+      // ตรวจสอบว่าช่องนั้นถูกกรอกหรือไม่และเป็นเลขที่ถูกต้อง
+      if (grid[i][j] == 0 || !isValid[i][j]) {
+        isWon = false; // ถ้ามีช่องที่ว่างหรือตัวเลขไม่ถูกต้อง ตั้งค่าสถานะชนะเป็น false
+        return; // ออกจากฟังก์ชัน
+      }
+    }
+  }
+}
+
 
 // คลาสสำหรับปุ่ม
 class PButton {
